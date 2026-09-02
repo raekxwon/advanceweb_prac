@@ -1,20 +1,64 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import {
+  createColumnHelper,
+  createPaginatedRowModel,
+  rowPaginationFeature,
+  tableFeatures,
+  useTable,
+} from "@tanstack/react-table";
 import "./App.css";
 
-function App() {
-  const [formData, setFormData] = useState({
-    gadgetName: "",
-    category: "",
-    manufacturer: "",
-    healthRating: "",
-    techBrand: "",
-    userRole: "",
-  });
+const features = tableFeatures({
+  rowPaginationFeature,
+  paginatedRowModel: createPaginatedRowModel(),
+});
 
+const columnHelper = createColumnHelper();
+const columns = columnHelper.columns([
+  columnHelper.accessor("gadgetName", { header: "Gadget Name" }),
+  columnHelper.accessor("category", { header: "Category" }),
+  columnHelper.accessor("manufacturer", { header: "Manufacturer" }),
+  columnHelper.accessor("healthRating", { header: "Health Rating" }),
+  columnHelper.accessor("techBrand", { header: "Tech Brand" }),
+  columnHelper.accessor("userRole", { header: "User Role" }),
+]);
+
+const emptyForm = {
+  gadgetName: "",
+  category: "",
+  manufacturer: "",
+  healthRating: "",
+  techBrand: "",
+  userRole: "",
+};
+
+function App() {
+  const [formData, setFormData] = useState(emptyForm);
+  const [gadgets, setGadgets] = useState([]);
+  const [activeGadgetId, setActiveGadgetId] = useState(null);
   const [errors, setErrors] = useState({});
 
   const categories = ["Smartphone", "Laptop", "Wearable", "Audio"];
   const roles = ["Engineer", "Tester"];
+  const activeGadget = gadgets.find((gadget) => gadget.id === activeGadgetId);
+
+  const tableData = useMemo(() => gadgets, [gadgets]);
+  const table = useTable(
+    {
+      features,
+      columns,
+      data: tableData,
+      initialState: {
+        pagination: {
+          pageIndex: 0,
+          pageSize: 3,
+        },
+      },
+    },
+    (state) => ({
+      pagination: state.pagination,
+    }),
+  );
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -94,9 +138,16 @@ function App() {
       return;
     }
 
-    alert("Gadget registered successfully!");
+    const newGadget = {
+      id: crypto.randomUUID(),
+      ...formData,
+      healthRating: Number(formData.healthRating),
+    };
 
-    console.log("Submitted Gadget:", formData);
+    setGadgets((currentGadgets) => [...currentGadgets, newGadget]);
+    setActiveGadgetId(newGadget.id);
+    setFormData(emptyForm);
+    setErrors({});
   };
 
   return (
@@ -232,6 +283,85 @@ function App() {
           </button>
 
         </form>
+
+        {gadgets.length > 0 && (
+          <section className="registry-section" aria-labelledby="registry-title">
+            <div className="registry-header">
+              <div>
+                <h2 id="registry-title">Registry Table View</h2>
+                <p>{gadgets.length} submitted gadget{gadgets.length === 1 ? "" : "s"}</p>
+              </div>
+
+              {activeGadget && (
+                <div className="active-item">
+                  Active Item: <strong>{activeGadget.gadgetName}</strong>
+                </div>
+              )}
+            </div>
+
+            <div className="table-wrap">
+              <table className="registry-table">
+                <thead>
+                  {table.getHeaderGroups().map((headerGroup) => (
+                    <tr key={headerGroup.id}>
+                      {headerGroup.headers.map((header) => (
+                        <th key={header.id}>
+                          {header.isPlaceholder ? null : (
+                            <table.FlexRender header={header} />
+                          )}
+                        </th>
+                      ))}
+                    </tr>
+                  ))}
+                </thead>
+
+                <tbody>
+                  {table.getPaginatedRowModel().rows.map((row) => {
+                    const isSelected = activeGadgetId === row.original.id;
+
+                    return (
+                      <tr
+                        key={row.id}
+                        className={isSelected ? "selected-row" : ""}
+                        onClick={() => setActiveGadgetId(row.original.id)}
+                      >
+                        {row.getAllCells().map((cell) => (
+                          <td key={cell.id}>
+                            <table.FlexRender cell={cell} />
+                          </td>
+                        ))}
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="pagination-controls">
+              <button
+                type="button"
+                className="pagination-button"
+                onClick={() => table.previousPage()}
+                disabled={!table.getCanPreviousPage()}
+              >
+                Previous
+              </button>
+
+              <span>
+                Page {table.state.pagination.pageIndex + 1} of {Math.max(table.getPageCount(), 1)}
+              </span>
+
+              <button
+                type="button"
+                className="pagination-button"
+                onClick={() => table.nextPage()}
+                disabled={!table.getCanNextPage()}
+              >
+                Next
+              </button>
+            </div>
+          </section>
+        )}
       </div>
     </div>
   );

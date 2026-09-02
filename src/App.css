@@ -17,12 +17,12 @@ body {
 /* Main container */
 .container {
   width: 100%;
-  max-width: 750px;
+  max-width: 980px;
   margin: auto;
   background: white;
   padding: 25px 30px;
   border: 1px solid #ddd;
-  border-radius: 10px;
+  border-radius: 8px;
 }
 
 /* Header */
@@ -122,6 +122,110 @@ button:hover {
   background: #222;
 }
 
+button:disabled {
+  background: #c5cbd3;
+  cursor: not-allowed;
+}
+
+.registry-section {
+  margin-top: 28px;
+  padding-top: 24px;
+  border-top: 1px solid #e5e7eb;
+  text-align: left;
+}
+
+.registry-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+
+.registry-header h2 {
+  margin: 0 0 4px;
+  font-size: 22px;
+  color: #1f2937;
+}
+
+.registry-header p {
+  margin: 0;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.active-item {
+  padding: 8px 10px;
+  border: 1px solid #d7dde5;
+  border-radius: 6px;
+  background: #f8fafc;
+  color: #374151;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.table-wrap {
+  overflow-x: auto;
+  border: 1px solid #d7dde5;
+  border-radius: 6px;
+}
+
+.registry-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 760px;
+  font-size: 14px;
+}
+
+.registry-table th,
+.registry-table td {
+  padding: 12px;
+  border-bottom: 1px solid #e5e7eb;
+  text-align: left;
+}
+
+.registry-table th {
+  background: #f3f4f6;
+  color: #374151;
+  font-weight: 700;
+}
+
+.registry-table tbody tr {
+  cursor: pointer;
+}
+
+.registry-table tbody tr:hover {
+  background: #f8fafc;
+}
+
+.registry-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.registry-table .selected-row {
+  background: #e8f2ff;
+  outline: 2px solid #4f7cac;
+  outline-offset: -2px;
+}
+
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 14px;
+  color: #374151;
+  font-size: 14px;
+}
+
+.pagination-button {
+  width: auto;
+  min-width: 92px;
+  height: 38px;
+  margin: 0;
+  padding: 0 14px;
+}
+
 /* Small screen */
 @media (max-width: 600px) {
   .container {
@@ -134,5 +238,19 @@ button:hover {
 
   .radio-group {
     gap: 15px;
+  }
+
+  .registry-header,
+  .pagination-controls {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .active-item {
+    white-space: normal;
+  }
+
+  .pagination-button {
+    width: 100%;
   }
 }
