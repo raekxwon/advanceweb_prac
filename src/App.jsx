@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   createColumnHelper,
   createPaginatedRowModel,
@@ -36,13 +36,22 @@ function App() {
   const [formData, setFormData] = useState(emptyForm);
   const [gadgets, setGadgets] = useState([]);
   const [activeGadgetId, setActiveGadgetId] = useState(null);
+  const [activeProfile, setActiveProfile] = useState(null);
+  const [roleFilter, setRoleFilter] = useState("All");
   const [errors, setErrors] = useState({});
 
   const categories = ["Smartphone", "Laptop", "Wearable", "Audio"];
   const roles = ["Engineer", "Tester"];
-  const activeGadget = gadgets.find((gadget) => gadget.id === activeGadgetId);
+  const filterOptions = ["All", ...roles];
 
-  const tableData = useMemo(() => gadgets, [gadgets]);
+  const tableData = useMemo(() => {
+    if (roleFilter === "All") {
+      return gadgets;
+    }
+
+    return gadgets.filter((gadget) => gadget.userRole === roleFilter);
+  }, [gadgets, roleFilter]);
+
   const table = useTable(
     {
       features,
@@ -59,6 +68,21 @@ function App() {
       pagination: state.pagination,
     }),
   );
+
+  useEffect(() => {
+    const selectedGadget = gadgets.find((gadget) => gadget.id === activeGadgetId);
+    let isCurrent = true;
+
+    queueMicrotask(() => {
+      if (isCurrent) {
+        setActiveProfile(selectedGadget ?? null);
+      }
+    });
+
+    return () => {
+      isCurrent = false;
+    };
+  }, [activeGadgetId, gadgets]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -148,6 +172,22 @@ function App() {
     setActiveGadgetId(newGadget.id);
     setFormData(emptyForm);
     setErrors({});
+  };
+
+  const handleRoleFilterChange = (nextFilter) => {
+    const nextVisibleGadgets = nextFilter === "All"
+      ? gadgets
+      : gadgets.filter((gadget) => gadget.userRole === nextFilter);
+    const activeGadgetIsVisible = nextVisibleGadgets.some(
+      (gadget) => gadget.id === activeGadgetId,
+    );
+
+    setRoleFilter(nextFilter);
+    table.setPageIndex(0);
+
+    if (!activeGadgetIsVisible) {
+      setActiveGadgetId(nextVisibleGadgets[0]?.id ?? null);
+    }
   };
 
   return (
@@ -289,14 +329,30 @@ function App() {
             <div className="registry-header">
               <div>
                 <h2 id="registry-title">Registry Table View</h2>
-                <p>{gadgets.length} submitted gadget{gadgets.length === 1 ? "" : "s"}</p>
+                <p>
+                  {tableData.length} visible of {gadgets.length} submitted gadget
+                  {gadgets.length === 1 ? "" : "s"}
+                </p>
               </div>
 
-              {activeGadget && (
+              {activeProfile && (
                 <div className="active-item">
-                  Active Item: <strong>{activeGadget.gadgetName}</strong>
+                  Active Item: <strong>{activeProfile.gadgetName}</strong>
                 </div>
               )}
+            </div>
+
+            <div className="filter-controls" aria-label="Filter records by user role">
+              {filterOptions.map((option) => (
+                <button
+                  key={option}
+                  type="button"
+                  className={roleFilter === option ? "filter-button active-filter" : "filter-button"}
+                  onClick={() => handleRoleFilterChange(option)}
+                >
+                  {option}
+                </button>
+              ))}
             </div>
 
             <div className="table-wrap">
@@ -316,6 +372,14 @@ function App() {
                 </thead>
 
                 <tbody>
+                  {table.getPaginatedRowModel().rows.length === 0 && (
+                    <tr>
+                      <td colSpan={columns.length} className="empty-table">
+                        No gadgets match this filter.
+                      </td>
+                    </tr>
+                  )}
+
                   {table.getPaginatedRowModel().rows.map((row) => {
                     const isSelected = activeGadgetId === row.original.id;
 
@@ -360,6 +424,53 @@ function App() {
                 Next
               </button>
             </div>
+
+            {activeProfile && (
+              <article className="profile-card" aria-label="Active item profile detail card">
+                <div className="profile-card-header">
+                  <div>
+                    <h3>{activeProfile.gadgetName}</h3>
+                    <p>{activeProfile.category} by {activeProfile.manufacturer}</p>
+                  </div>
+
+                  <span className={`role-badge ${activeProfile.userRole.toLowerCase()}`}>
+                    {activeProfile.userRole}
+                  </span>
+                </div>
+
+                <dl className="profile-details">
+                  <div>
+                    <dt>Gadget Name</dt>
+                    <dd>{activeProfile.gadgetName}</dd>
+                  </div>
+
+                  <div>
+                    <dt>Category</dt>
+                    <dd>{activeProfile.category}</dd>
+                  </div>
+
+                  <div>
+                    <dt>Manufacturer</dt>
+                    <dd>{activeProfile.manufacturer}</dd>
+                  </div>
+
+                  <div>
+                    <dt>Health Rating</dt>
+                    <dd>{activeProfile.healthRating}/100</dd>
+                  </div>
+
+                  <div>
+                    <dt>Tech Brand</dt>
+                    <dd>{activeProfile.techBrand}</dd>
+                  </div>
+
+                  <div>
+                    <dt>User Role</dt>
+                    <dd>{activeProfile.userRole}</dd>
+                  </div>
+                </dl>
+              </article>
+            )}
           </section>
         )}
       </div>
